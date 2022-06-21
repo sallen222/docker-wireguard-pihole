@@ -1,0 +1,62 @@
+version: "3"
+
+networks:
+  private_network:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.21.0.0/24
+
+services:
+  # For info on the Pihole docker image visit https://github.com/pi-hole/docker-pi-hole/
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    # For DHCP it is recommended to remove these ports and instead add: network_mode: "host"
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "67:67/udp" # Only required if you are using Pi-hole as your DHCP server
+      - "80:80/tcp"
+    environment:
+      TZ: 'America/Philadelphia' # Change to your Time Zone
+      WEBPASSWORD: REPLACE_ME # Replace with desired password    
+    volumes:
+      - './etc-pihole:/etc/pihole'
+      - './etc-dnsmasq.d:/etc/dnsmasq.d'
+    cap_add:
+      - NET_ADMIN # Only required for use as DHCP Server
+    restart: unless-stopped
+    networks:
+      private_network:
+        ipv4_address: 172.21.0.3 # Internal IP Address
+  # For info on Linuxserver's Wireguard Image visit https://github.com/linuxserver/docker-wireguard/
+  wireguard:
+    depends_on: [pihole]
+    image: lscr.io/linuxserver/wireguard:latest # Uses Linuxserver's Wireguard Image
+    container_name: wireguard
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Philadelphia # Change to your Time Zone
+      - SERVERURL=auto 
+      - SERVERPORT=51820 
+      - PEERS=1 # Number of peers (clients). Change based on need
+      - PEERDNS=172.21.0.3 #Internal IP address of pihole docker container
+      - INTERNAL_SUBNET=10.13.13.0
+      - ALLOWEDIPS=0.0.0.0/0 # Set to the internal IP of Pihole container to only tunnel DNS => increases speeds
+      - LOG_CONFS=true
+    volumes:
+      - /path/to/appdata/config:/config
+      - /lib/modules:/lib/modules
+    ports:
+      - 51820:51820/udp
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    restart: unless-stopped
+    networks:
+      private_network:
+        ipv4_address: 172.21.0.2
