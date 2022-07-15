@@ -14,7 +14,7 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
 ### Clone Repository
 
-Next you have to clone and open this repo.
+Next, clone and open this repo.
 
 ```
 git clone https://github.com/sallen222/docker-wireguard-pihole.git
