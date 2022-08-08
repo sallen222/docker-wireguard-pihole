@@ -1,6 +1,6 @@
 version: "3"
 
-# Reuired .env variables
+# Required .env variables
 # TIMEZONE - your timezone in America/New_York format
 # PASSWORD - the password your the pihole web ui
 # PEERS - The number of peers (clients) you need for wireguard
