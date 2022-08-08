@@ -1,5 +1,10 @@
 version: "3"
 
+# Reuired .env variables
+# TIMEZONE - your timezone in America/New_York format
+# PASSWORD - the password your the pihole web ui
+# PEERS - The number of peers (clients) you need for wireguard
+
 networks:
   private_network:
     ipam:
@@ -8,7 +13,7 @@ networks:
         - subnet: 172.21.0.0/24
 
 services:
-  # For info on the Pihole docker image visit https://github.com/pi-hole/docker-pi-hole/
+  # https://github.com/pi-hole/docker-pi-hole/
   pihole:
     container_name: pihole
     image: pihole/pihole:latest
@@ -18,8 +23,8 @@ services:
       - "67:67/udp" # Only required if you are using Pi-hole as your DHCP server
       - "80:80/tcp"
     environment:
-      TZ: 'America/Philadelphia' # Change to your Time Zone
-      WEBPASSWORD: REPLACE_ME # Replace with desired password    
+      TZ: ${TIMEZONE}
+      WEBPASSWORD: ${PASSWORD} 
     volumes:
       - './etc-pihole:/etc/pihole'
       - './etc-dnsmasq.d:/etc/dnsmasq.d'
@@ -28,11 +33,11 @@ services:
     restart: unless-stopped
     networks:
       private_network:
-        ipv4_address: 172.21.0.3 # Internal IP Address
-  # For info on Linuxserver's Wireguard Image visit https://github.com/linuxserver/docker-wireguard/
+        ipv4_address: 172.21.0.3
+  # https://github.com/linuxserver/docker-wireguard/
   wireguard:
     depends_on: [pihole]
-    image: lscr.io/linuxserver/wireguard:latest # Uses Linuxserver's Wireguard Image
+    image: lscr.io/linuxserver/wireguard:latest 
     container_name: wireguard
     cap_add:
       - NET_ADMIN
@@ -40,13 +45,13 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=America/Philadelphia # Change to your Time Zone
+      - TZ=${TIMEZONE} # Change to your Time Zone
       - SERVERURL=auto 
       - SERVERPORT=51820 
-      - PEERS=1 # Number of peers (clients). Change based on need
+      - PEERS=${PEERS}
       - PEERDNS=172.21.0.3 #Internal IP address of pihole docker container
       - INTERNAL_SUBNET=10.13.13.0
-      - ALLOWEDIPS=0.0.0.0/0 # Set to the internal IP of Pihole container to only tunnel DNS => increases speeds
+      - ALLOWEDIPS=0.0.0.0/0
       - LOG_CONFS=true
     volumes:
       - /path/to/appdata/config:/config
